@@ -461,9 +461,21 @@ function startMontage() {
 
   montage.classList.add('active');
 
-  // Start music
-  music.volume = 1;
-  music.play().catch(() => {});
+  // Start music after 3s pause, then fade in over 5s
+  setTimeout(() => {
+    music.volume = 0;
+    music.play().catch(() => {});
+    let fadeInVol = 0;
+    const fadeInMusic = setInterval(() => {
+      fadeInVol += 0.02;
+      if (fadeInVol >= 1) {
+        music.volume = 1;
+        clearInterval(fadeInMusic);
+      } else {
+        music.volume = fadeInVol;
+      }
+    }, 100);
+  }, 3000);
 
   // Start scrolling message
   setTimeout(startMessageScroll, 500);
