@@ -165,7 +165,7 @@ html, body {
     0 0 25px rgba(0,0,0,0.9);
 }
 
-/* ─── STICKY SIGNATURE (stays at bottom of screen) ─── */
+/* ─── STICKY SIGNATURE (scrolls up from bottom, then stays) ─── */
 #sticky-signature {
   position: absolute;
   bottom: 6%;
@@ -175,7 +175,7 @@ html, body {
   font-size: clamp(1.6rem, 3.2vw, 2.4rem);
   color: #ffffff;
   opacity: 0;
-  transition: opacity 2s ease;
+  transform: translateY(120px);
   z-index: 15;
   pointer-events: none;
   text-shadow:
@@ -184,7 +184,11 @@ html, body {
     0 0 50px rgba(0,0,0,0.7),
     0 1px 3px rgba(0,0,0,1);
 }
-#sticky-signature.visible { opacity: 1; }
+#sticky-signature.visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 2s ease, transform 2.5s ease;
+}
 
 /* ─── VIGNETTE OVERLAY ─── */
 #vignette {
@@ -500,8 +504,8 @@ function startMontage() {
   // Start scrolling message
   setTimeout(startMessageScroll, 500);
 
-  // Fade in sticky signature near end of scroll (80% through)
-  const sigDelay = (MONTAGE_DURATION - FADE_DURATION) * 0.78;
+  // Scroll in sticky signature after all words finish (90% through)
+  const sigDelay = (MONTAGE_DURATION - FADE_DURATION) * 0.90;
   setTimeout(() => {
     document.getElementById('sticky-signature').classList.add('visible');
   }, sigDelay);
