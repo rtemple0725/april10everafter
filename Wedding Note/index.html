@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>April 10 ~ Ever After</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #0a0a0a;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+/* ─── OPENING SCREEN ─── */
+#opening {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at center, #1a1018 0%, #0a0608 100%);
+  z-index: 100;
+  transition: opacity 1.5s ease;
+}
+#opening.hidden { opacity: 0; pointer-events: none; }
+
+#opening h1 {
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(2.8rem, 8vw, 5.5rem);
+  color: #e8d5c4;
+  text-shadow: 0 0 40px rgba(200,160,120,0.3);
+  margin-bottom: 0.2em;
+  opacity: 0;
+  animation: fadeUp 2s 0.3s forwards;
+}
+#opening .date-line {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1rem, 3vw, 1.6rem);
+  color: #b89a7e;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  margin-bottom: 2.5em;
+  opacity: 0;
+  animation: fadeUp 2s 0.8s forwards;
+}
+#play-btn {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  border: 2px solid rgba(232,213,196,0.5);
+  background: rgba(232,213,196,0.08);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.4s ease;
+  opacity: 0;
+  animation: fadeUp 2s 1.4s forwards;
+}
+#play-btn:hover { background: rgba(232,213,196,0.18); transform: scale(1.08); }
+#play-btn svg { fill: #e8d5c4; margin-left: 4px; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── MONTAGE CONTAINER ─── */
+#montage {
+  position: fixed; inset: 0;
+  display: none;
+  background: radial-gradient(ellipse at center, #1a1018 0%, #0a0608 100%);
+}
+#montage.active { display: block; opacity: 1; transition: opacity 3s ease; }
+#montage.fade-out { opacity: 0; }
+
+/* ─── PHOTO AREA (full screen, behind text) ─── */
+#photo-area {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* ─── POLAROID ─── */
+.polaroid {
+  position: absolute;
+  background: #fff;
+  padding: 8px 8px 32px 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3);
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+  z-index: 1;
+}
+.polaroid.visible {
+  opacity: 0.85;
+  transform: scale(1);
+}
+.polaroid.fading {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 1.5s ease, transform 1.5s ease;
+}
+.polaroid img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* ─── MESSAGE PANEL (centered, overlaying photos) ─── */
+#message-panel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#message-scroll {
+  width: 60%;
+  max-width: 700px;
+  padding: 100vh 0;
+  text-align: center;
+  /* animation set by JS */
+}
+
+#message-scroll p {
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(1.3rem, 2.6vw, 1.9rem);
+  color: #ffffff;
+  line-height: 1.85;
+  margin-bottom: 1.4em;
+  text-shadow:
+    0 0 12px rgba(0,0,0,1),
+    0 0 25px rgba(0,0,0,0.95),
+    0 0 50px rgba(0,0,0,0.7),
+    0 1px 3px rgba(0,0,0,1);
+  background: radial-gradient(ellipse at center, rgba(10,6,8,0.55) 0%, transparent 70%);
+  padding: 0.3em 0.6em;
+  border-radius: 8px;
+}
+#message-scroll p.signature {
+  margin-top: 1.5em;
+  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  color: #ffffff;
+}
+#message-scroll p.sign-date {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: #e8d5c4;
+  letter-spacing: 0.15em;
+  text-shadow:
+    0 0 12px rgba(0,0,0,1),
+    0 0 25px rgba(0,0,0,0.9);
+}
+
+/* ─── VIGNETTE OVERLAY ─── */
+#vignette {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.55) 100%);
+}
+
+/* ─── FINAL FADE ─── */
+#finale {
+  position: fixed; inset: 0;
+  background: #0a0608;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 3s ease;
+}
+#finale.visible { opacity: 1; pointer-events: auto; }
+#finale h2 {
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(2.4rem, 7vw, 4.8rem);
+  color: #e8d5c4;
+  text-shadow: 0 0 40px rgba(200,160,120,0.3);
+  opacity: 0;
+  animation: fadeUp 2.5s 1s forwards;
+}
+#finale .forever {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  color: #b89a7e;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  margin-top: 0.8em;
+  opacity: 0;
+  animation: fadeUp 2.5s 2s forwards;
+}
+#finale-photo {
+  margin-top: 1.8em;
+  background: #fff;
+  padding: 10px 10px 38px 10px;
+  box-shadow: 0 6px 30px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.4);
+  transform: rotate(-2deg);
+  opacity: 0;
+  animation: fadeUp 2.5s 2.5s forwards;
+}
+#finale-photo img {
+  display: block;
+  width: clamp(200px, 40vw, 320px);
+  height: clamp(200px, 40vw, 320px);
+  object-fit: cover;
+}
+
+#replay-btn {
+  margin-top: 1.8em;
+  padding: 12px 36px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #e8d5c4;
+  border: 1px solid rgba(232,213,196,0.4);
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s;
+  opacity: 0;
+  animation: fadeUp 2s 3s forwards;
+}
+#replay-btn:hover { background: rgba(232,213,196,0.1); }
+
+/* ─── MOBILE ─── */
+@media (max-width: 768px) {
+  #message-scroll {
+    width: 85%;
+    padding: 100vh 0;
+  }
+  #message-scroll p {
+    font-size: clamp(1.15rem, 4.5vw, 1.5rem);
+    line-height: 1.7;
+    margin-bottom: 1.1em;
+    color: #ffffff;
+    background: radial-gradient(ellipse at center, rgba(10,6,8,0.65) 0%, transparent 70%);
+    text-shadow:
+      0 0 12px rgba(0,0,0,1),
+      0 0 25px rgba(0,0,0,0.95),
+      0 0 50px rgba(0,0,0,0.7),
+      0 1px 3px rgba(0,0,0,1);
+  }
+  .polaroid {
+    padding: 5px 5px 22px 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  #message-scroll {
+    width: 92%;
+  }
+  #message-scroll p {
+    font-size: clamp(1.05rem, 4.8vw, 1.4rem);
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- OPENING SCREEN -->
+<div id="opening">
+  <h1>Angela & Rich</h1>
+  <div class="date-line">April 10, 2026</div>
+  <button id="play-btn" aria-label="Play">
+    <svg width="30" height="34" viewBox="0 0 30 34"><polygon points="0,0 30,17 0,34"/></svg>
+  </button>
+</div>
+
+<!-- MONTAGE -->
+<div id="montage">
+  <div id="photo-area"></div>
+
+  <div id="message-panel">
+    <div id="message-scroll">
+
+      <p>My Love,</p>
+
+      <p>Today is our wedding day!  Wow&hellip;our wedding day!  What a crazy journey it's been for both of us to get to this very special day!</p>
+
+      <p>I finally feel at peace today after many difficult chapters, challenging moments, and doubts about finding happiness. I thank the universe today &mdash; for you, for us, our families and for every little moment that led us here. Out of all the paths life could have taken, somehow they led us to each other&hellip;each of our paths very different, each of our experiences different, each laugh, cry, hug, smile, achievement and failure were different, and the people that touched our lives and bumped our paths toward this moment&hellip;different, but today brings us to a new journey&hellip;together!!</p>
+
+      <p>You are an incredible woman, more than even everyone sees and admires. To me&hellip;you're my peace when I need grounding, my strength when I don't have it, and my joy in the simplest moments. One look, one smile, one grab of my hand is all I ever need to put me back together.  You've changed me in the best ways &mdash; not by asking me to be different, but by inspiring me and challenging me to be better.  Loving you has made my life fuller, deeper, and more meaningful than I ever thought possible.  I've found my partner, my best friend, and the person I want beside me for every moment life brings, the easy ones and the hard ones.  You are my family&hellip;</p>
+
+      <p>Today, I don't just get to marry you before god, our family, friends and each other&hellip; I get to promise you my life, my commitment, my loyalty, my heart &mdash; all of it, completely and without hesitation. And I make that promise with so much conviction&hellip;because of who you are to me and Kobe, because of who you are to others, because of who you are to yourself, and because our journeys brought us to this moment and gave us this gift of choosing to stand by each other for the rest of our lives.</p>
+
+      <p>When you walk toward me today, just know that I'll be standing there in awe of you &mdash; of your strength, your beauty, your heart &mdash; and feeling like the luckiest man alive.</p>
+
+      <p>I love you more than I could ever say!  Thank you for choosing me and thank you for choosing us!</p>
+
+      <p class="signature">Forever and Always Yours, Rich</p>
+      <p class="sign-date">April 10, 2026</p>
+
+    </div>
+  </div>
+</div>
+
+<div id="vignette"></div>
+
+<!-- FINALE -->
+<div id="finale">
+  <h2>Our Forever Begins Today</h2>
+  <div class="forever">April 10, 2026</div>
+  <button id="replay-btn" onclick="location.reload()">Watch Again</button>
+  <div id="finale-photo"><img src="IMG_8739.jpeg" alt=""></div>
+</div>
+
+<!-- AUDIO -->
+<audio id="music" preload="auto">
+  <source src="Make You Feel My Love 4.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+// ─── PHOTO LIST (chronological by EXIF date) ───
+const photos = [
+  "IMG_0925.jpeg","IMG_0546.jpeg","IMG_1210.jpeg","IMG_1312.jpeg","IMG_1487.jpeg",
+  "IMG_1547.jpeg","IMG_1561.jpeg","IMG_1571.jpeg","IMG_1783.jpeg","IMG_1831.jpeg",
+  "IMG_1859.jpeg","IMG_0415.jpeg","IMG_2188.jpeg","IMG_2235.jpeg","IMG_1921.jpeg",
+  "IMG_2339.jpeg","IMG_2441.jpeg","IMG_2451.jpeg","IMG_2548.jpeg","IMG_1208.jpeg",
+  "IMG_1022.jpeg","IMG_2591.jpeg","IMG_2034.jpeg","IMG_2670.jpeg","IMG_2713.jpeg",
+  "IMG_1589.jpeg","IMG_2816.jpeg","IMG_2863.jpeg","IMG_2930.jpeg","IMG_2936.jpeg",
+  "IMG_3127.jpeg","IMG_3238.jpeg","IMG_3241.jpeg","IMG_3277.jpeg","IMG_3329.jpeg",
+  "IMG_3380.jpeg","IMG_3417.jpeg","IMG_3441.jpeg","IMG_3489.jpeg","IMG_3502.jpeg",
+  "IMG_3569.jpeg","IMG_3611.jpeg","IMG_3663.jpeg","IMG_3676.jpeg","IMG_1049.jpeg",
+  "IMG_4210.JPG","IMG_4402.jpeg","IMG_4421.jpeg","IMG_4448.jpeg","IMG_4624.jpeg",
+  "IMG_4667.jpeg","IMG_5094.jpeg","IMG_5311.jpeg","IMG_5409.jpeg","IMG_5414.jpeg",
+  "IMG_5426.jpeg","IMG_5435.jpeg","IMG_5574.jpeg","IMG_5827.JPG","IMG_5877.jpeg",
+  "IMG_5955.jpeg","IMG_6072.jpeg","IMG_6120.jpeg","IMG_6847.jpeg","IMG_6961.jpeg",
+  "IMG_7379.jpeg","IMG_7525.jpeg","IMG_7546.jpeg","IMG_7636.jpeg","IMG_7961.jpeg",
+  "IMG_8082.jpeg","IMG_8213.jpeg","IMG_8575.jpeg","IMG_8691.jpeg","IMG_8704.jpeg",
+  "IMG_8767.jpeg","IMG_8972.jpeg","IMG_9067.jpeg","IMG_9154.jpeg","IMG_9625.jpeg",
+  "IMG_9654.jpeg","IMG_9800.jpeg","IMG_0255.jpeg","IMG_0349.jpeg","IMG_0372.jpeg",
+  "IMG_0843.jpeg","IMG_1784.jpeg","IMG_1937.jpeg","IMG_3468.jpeg","IMG_0017.JPG",
+  "IMG_3913.jpeg","IMG_4613.jpeg","IMG_4960.jpeg","IMG_5880.jpeg","IMG_5892.jpeg",
+  "IMG_6527.jpeg","IMG_6730.jpeg","IMG_6753.jpeg","IMG_6881.jpeg","IMG_7217.jpeg",
+  "IMG_7238.jpeg","IMG_7466.jpeg","IMG_7531.jpeg","IMG_8739.jpeg",
+  "951693aa-f4cf-405e-80ae-862256e793cb.JPG"
+];
+
+const MONTAGE_DURATION = 150000;  // 2 min 30 sec
+const FADE_DURATION    = 3000;    // 3s crossfade at end
+const PHOTO_INTERVAL   = 1300;    // new photo every 1.3s
+const PHOTO_LIFESPAN   = 7000;    // each photo stays 7s
+const MAX_VISIBLE      = 6;       // max photos on screen at once
+
+let photoIndex = 0;
+let photoTimer = null;
+let activePolaroids = [];
+
+// ─── SIZING ───
+function polaroidSize() {
+  const w = window.innerWidth;
+  if (w <= 480) return { w: 150, h: 150 };
+  if (w <= 768) return { w: 185, h: 185 };
+  return { w: 240, h: 240 };
+}
+
+// ─── CREATE POLAROID ───
+function spawnPhoto() {
+  if (photoIndex >= photos.length) photoIndex = 0;  // loop if needed
+
+  const area = document.getElementById('photo-area');
+  const rect = area.getBoundingClientRect();
+  const size = polaroidSize();
+
+  const div = document.createElement('div');
+  div.className = 'polaroid';
+  const rotation = (Math.random() - 0.5) * 16;  // -8 to +8 degrees
+  const x = Math.random() * (rect.width - size.w - 20);
+  const y = Math.random() * (rect.height - size.h - 50);
+  div.style.left = x + 'px';
+  div.style.top = y + 'px';
+  div.style.width = size.w + 'px';
+  div.style.setProperty('--rot', rotation + 'deg');
+  div.style.transform = 'scale(0.7) rotate(' + rotation + 'deg)';
+
+  const img = document.createElement('img');
+  img.src = photos[photoIndex];
+  img.alt = '';
+  img.loading = 'eager';
+  img.style.width = (size.w - 16) + 'px';
+  img.style.height = (size.h - 16) + 'px';
+  img.style.objectFit = 'cover';
+  div.appendChild(img);
+
+  area.appendChild(div);
+
+  // Force reflow then animate in
+  requestAnimationFrame(() => {
+    div.classList.add('visible');
+    div.style.transform = 'scale(1) rotate(' + rotation + 'deg)';
+  });
+
+  activePolaroids.push({ el: div, born: Date.now() });
+  photoIndex++;
+
+  // Remove old photos
+  const now = Date.now();
+  activePolaroids = activePolaroids.filter(p => {
+    if (now - p.born > PHOTO_LIFESPAN) {
+      p.el.classList.remove('visible');
+      p.el.classList.add('fading');
+      setTimeout(() => p.el.remove(), 1600);
+      return false;
+    }
+    return true;
+  });
+
+  // Also cap max visible
+  while (activePolaroids.length > MAX_VISIBLE) {
+    const oldest = activePolaroids.shift();
+    oldest.el.classList.remove('visible');
+    oldest.el.classList.add('fading');
+    setTimeout(() => oldest.el.remove(), 1100);
+  }
+}
+
+// ─── SCROLL MESSAGE ───
+function startMessageScroll() {
+  const scroll = document.getElementById('message-scroll');
+  const panel  = document.getElementById('message-panel');
+  // Measure needed scroll distance
+  const scrollDist = scroll.scrollHeight - panel.clientHeight;
+  // Set CSS animation
+  const scrollTime = MONTAGE_DURATION - FADE_DURATION;
+  scroll.style.animation = `scrollUp ${scrollTime}ms linear forwards`;
+
+  // Inject keyframes
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes scrollUp {
+      0%   { transform: translateY(0); }
+      100% { transform: translateY(-${scrollDist}px); }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// ─── START MONTAGE ───
+function startMontage() {
+  const music = document.getElementById('music');
+  const opening = document.getElementById('opening');
+  const montage = document.getElementById('montage');
+
+  opening.classList.add('hidden');
+  setTimeout(() => { opening.style.display = 'none'; }, 1600);
+
+  montage.classList.add('active');
+
+  // Start music
+  music.volume = 1;
+  music.play().catch(() => {});
+
+  // Start scrolling message
+  setTimeout(startMessageScroll, 500);
+
+  // Start photos
+  setTimeout(() => {
+    spawnPhoto(); // first one immediately
+    photoTimer = setInterval(spawnPhoto, PHOTO_INTERVAL);
+  }, 800);
+
+  // Stop spawning new photos a few seconds before the crossfade
+  setTimeout(() => {
+    clearInterval(photoTimer);
+  }, MONTAGE_DURATION - FADE_DURATION - 4000);
+
+  // Begin crossfade: montage fades out, finale fades in simultaneously
+  setTimeout(() => {
+    // Fade out the entire montage (photos + text together)
+    montage.classList.add('fade-out');
+
+    // Fade in the finale at the same time
+    const finale = document.getElementById('finale');
+    finale.classList.add('visible');
+
+    // Fade music out over the crossfade
+    let vol = 1;
+    const fadeMusic = setInterval(() => {
+      vol -= 0.025;
+      if (vol <= 0) {
+        music.pause();
+        clearInterval(fadeMusic);
+      } else {
+        music.volume = vol;
+      }
+    }, 100);
+  }, MONTAGE_DURATION - FADE_DURATION);
+}
+
+// ─── PRELOAD A FEW IMAGES ───
+function preloadImages(count) {
+  for (let i = 0; i < Math.min(count, photos.length); i++) {
+    const img = new Image();
+    img.src = photos[i];
+  }
+}
+
+// ─── INIT ───
+document.getElementById('play-btn').addEventListener('click', startMontage);
+preloadImages(15);
+</script>
+</body>
+</html>
