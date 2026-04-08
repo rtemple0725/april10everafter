@@ -149,21 +149,25 @@ html, body {
   padding: 0.3em 0.6em;
   border-radius: 8px;
 }
-#message-scroll p.signature {
-  margin-top: 1.5em;
+#sticky-signature {
+  position: absolute;
+  bottom: 6%;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: 'Great Vibes', cursive;
   font-size: clamp(1.6rem, 3.2vw, 2.4rem);
   color: #ffffff;
-}
-#message-scroll p.sign-date {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-size: clamp(1rem, 2vw, 1.3rem);
-  color: #e8d5c4;
-  letter-spacing: 0.15em;
+  opacity: 0;
+  transition: opacity 2s ease;
+  z-index: 15;
+  pointer-events: none;
   text-shadow:
     0 0 12px rgba(0,0,0,1),
-    0 0 25px rgba(0,0,0,0.9);
+    0 0 25px rgba(0,0,0,0.95),
+    0 0 50px rgba(0,0,0,0.7),
+    0 1px 3px rgba(0,0,0,1);
 }
+#sticky-signature.visible { opacity: 1; }
 
 /* ─── VIGNETTE OVERLAY ─── */
 #vignette {
@@ -302,11 +306,10 @@ html, body {
 
       <p>I love you more than I could ever say!  Thank you for choosing me and thank you for choosing us!</p>
 
-      <p class="signature">Forever and Always Yours, Rich</p>
-      <p class="sign-date">April 10, 2026</p>
 
     </div>
   </div>
+  <div id="sticky-signature">Forever and Always Yours, Rich</div>
 </div>
 
 <div id="vignette"></div>
@@ -351,7 +354,7 @@ const photos = [
   "951693aa-f4cf-405e-80ae-862256e793cb.JPG"
 ];
 
-const MONTAGE_DURATION = 150000;  // 2 min 30 sec
+const MONTAGE_DURATION = 147000;  // ~2 min 27 sec (3s earlier finale)
 const FADE_DURATION    = 3000;    // 3s crossfade at end
 const PHOTO_INTERVAL   = 1300;    // new photo every 1.3s
 const PHOTO_LIFESPAN   = 7000;    // each photo stays 7s
@@ -461,12 +464,28 @@ function startMontage() {
 
   montage.classList.add('active');
 
-  // Start music
-  music.volume = 1;
+  // Start music with 5s fade-in
+  music.volume = 0;
   music.play().catch(() => {});
+  let fadeInVol = 0;
+  const fadeInMusic = setInterval(() => {
+    fadeInVol += 0.02;
+    if (fadeInVol >= 1) {
+      music.volume = 1;
+      clearInterval(fadeInMusic);
+    } else {
+      music.volume = fadeInVol;
+    }
+  }, 100);
 
-  // Start scrolling message
-  setTimeout(startMessageScroll, 500);
+  // Start scrolling message immediately
+  startMessageScroll();
+
+  // Fade in sticky signature near end of scroll (80% through)
+  const sigDelay = (MONTAGE_DURATION - FADE_DURATION) * 0.78;
+  setTimeout(() => {
+    document.getElementById('sticky-signature').classList.add('visible');
+  }, sigDelay);
 
   // Start photos
   setTimeout(() => {
