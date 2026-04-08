@@ -1,3 +1,10 @@
 .DS_Store
 *.bak
 index_backup_v2.html
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
