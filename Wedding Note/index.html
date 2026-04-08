@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -74,6 +76,50 @@ html, body {
 }
 #montage.active { display: block; opacity: 1; transition: opacity 3s ease; }
 #montage.fade-out { opacity: 0; }
+
+/* ─── WORLD MAP BACKGROUND ─── */
+#world-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 3s ease;
+}
+#world-map.visible { opacity: 1; }
+#world-map svg {
+  width: 100%;
+  height: 100%;
+}
+#world-map .land {
+  fill: rgba(180, 150, 120, 0.06);
+  stroke: rgba(200, 160, 120, 0.15);
+  stroke-width: 0.5;
+}
+#world-map .pin-glow {
+  fill: rgba(232, 180, 120, 0.25);
+}
+#world-map .pin-dot {
+  fill: #e8b878;
+  filter: drop-shadow(0 0 4px rgba(232, 180, 120, 0.6));
+}
+#world-map .pin-ring {
+  fill: none;
+  stroke: rgba(232, 180, 120, 0.35);
+  stroke-width: 0.8;
+}
+@keyframes pinPulse {
+  0%   { r: 5; opacity: 0.35; }
+  50%  { r: 9; opacity: 0.1; }
+  100% { r: 5; opacity: 0.35; }
+}
+#world-map .pin-pulse {
+  fill: none;
+  stroke: rgba(232, 180, 120, 0.3);
+  stroke-width: 0.5;
+  animation: pinPulse 3s ease-in-out infinite;
+}
 
 /* ─── PHOTO AREA (full screen, behind text) ─── */
 #photo-area {
@@ -308,6 +354,7 @@ html, body {
 
 <!-- MONTAGE -->
 <div id="montage">
+  <div id="world-map"></div>
   <div id="photo-area"></div>
 
   <div id="message-panel">
@@ -554,8 +601,101 @@ function preloadImages(count) {
   }
 }
 
+// ─── WORLD MAP ───
+const destinations = [
+  { name: "Singapore",        lat: 1.35,   lon: 103.82 },
+  { name: "Koh Samui",        lat: 9.51,   lon: 100.06 },
+  { name: "Hong Kong",        lat: 22.32,  lon: 114.17 },
+  { name: "Seattle",          lat: 47.61,  lon: -122.33 },
+  { name: "Wilmington, NC",   lat: 34.23,  lon: -77.94 },
+  { name: "Columbus, GA",     lat: 32.46,  lon: -84.99 },
+  { name: "Atlanta",          lat: 33.75,  lon: -84.39 },
+  { name: "Hudson, NY",       lat: 42.25,  lon: -73.79 },
+  { name: "Montauk",          lat: 41.04,  lon: -71.95 },
+  { name: "Rehoboth Beach",   lat: 38.72,  lon: -75.08 },
+  { name: "London",           lat: 51.51,  lon: -0.13 },
+  { name: "Cancun",           lat: 21.16,  lon: -86.85 },
+  { name: "Marco Island",     lat: 25.94,  lon: -81.72 },
+  { name: "Sarasota",         lat: 27.34,  lon: -82.53 }
+];
+
+function renderWorldMap() {
+  const container = document.getElementById('world-map');
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+
+  const svg = d3.select('#world-map')
+    .append('svg')
+    .attr('viewBox', `0 0 ${w} ${h}`)
+    .attr('preserveAspectRatio', 'xMidYMid slice');
+
+  // Defs for glow filter
+  const defs = svg.append('defs');
+  const filter = defs.append('filter').attr('id', 'pin-glow');
+  filter.append('feGaussianBlur').attr('stdDeviation', '3').attr('result', 'blur');
+  filter.append('feMerge').selectAll('feMergeNode')
+    .data(['blur', 'SourceGraphic']).enter()
+    .append('feMergeNode').attr('in', d => d);
+
+  const projection = d3.geoNaturalEarth1()
+    .scale(w / 5.5)
+    .translate([w / 2, h / 1.8]);
+
+  const path = d3.geoPath().projection(projection);
+
+  // Load world map
+  d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(world => {
+    const land = topojson.feature(world, world.objects.countries);
+
+    svg.append('g')
+      .selectAll('path')
+      .data(land.features)
+      .enter().append('path')
+      .attr('class', 'land')
+      .attr('d', path);
+
+    // Add pins for each destination
+    const pins = svg.append('g');
+
+    destinations.forEach((dest, i) => {
+      const [x, y] = projection([dest.lon, dest.lat]);
+      if (x && y) {
+        const g = pins.append('g');
+
+        // Pulse ring
+        g.append('circle')
+          .attr('cx', x).attr('cy', y)
+          .attr('class', 'pin-pulse')
+          .style('animation-delay', (i * 0.4) + 's');
+
+        // Outer glow
+        g.append('circle')
+          .attr('cx', x).attr('cy', y).attr('r', 6)
+          .attr('class', 'pin-glow');
+
+        // Ring
+        g.append('circle')
+          .attr('cx', x).attr('cy', y).attr('r', 4)
+          .attr('class', 'pin-ring');
+
+        // Center dot
+        g.append('circle')
+          .attr('cx', x).attr('cy', y).attr('r', 2.2)
+          .attr('class', 'pin-dot')
+          .attr('filter', 'url(#pin-glow)');
+      }
+    });
+
+    // Fade in the map
+    container.classList.add('visible');
+  });
+}
+
 // ─── INIT ───
-document.getElementById('play-btn').addEventListener('click', startMontage);
+document.getElementById('play-btn').addEventListener('click', () => {
+  renderWorldMap();
+  startMontage();
+});
 preloadImages(15);
 </script>
 </body>
