@@ -93,9 +93,9 @@ html, body {
   height: 100%;
 }
 #world-map .land {
-  fill: rgba(180, 150, 120, 0.06);
-  stroke: rgba(200, 160, 120, 0.15);
-  stroke-width: 0.5;
+  fill: rgba(180, 150, 120, 0.10);
+  stroke: rgba(200, 160, 120, 0.25);
+  stroke-width: 0.6;
 }
 #world-map .pin-glow {
   fill: rgba(232, 180, 120, 0.25);
@@ -616,16 +616,20 @@ const destinations = [
   { name: "London",           lat: 51.51,  lon: -0.13 },
   { name: "Cancun",           lat: 21.16,  lon: -86.85 },
   { name: "Marco Island",     lat: 25.94,  lon: -81.72 },
-  { name: "Sarasota",         lat: 27.34,  lon: -82.53 }
+  { name: "Sarasota",         lat: 27.34,  lon: -82.53 },
+  { name: "Bradley Beach",    lat: 40.20,  lon: -74.01 }
 ];
 
 function renderWorldMap() {
   const container = document.getElementById('world-map');
-  const w = container.clientWidth;
-  const h = container.clientHeight;
+  // Use window dimensions as fallback since montage may still be transitioning
+  const w = window.innerWidth;
+  const h = window.innerHeight;
 
   const svg = d3.select('#world-map')
     .append('svg')
+    .attr('width', w)
+    .attr('height', h)
     .attr('viewBox', `0 0 ${w} ${h}`)
     .attr('preserveAspectRatio', 'xMidYMid slice');
 
@@ -644,22 +648,25 @@ function renderWorldMap() {
   const path = d3.geoPath().projection(projection);
 
   // Load world map
-  d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(world => {
-    const land = topojson.feature(world, world.objects.countries);
+  d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+    .then(world => {
+      const land = topojson.feature(world, world.objects.countries);
 
-    svg.append('g')
-      .selectAll('path')
-      .data(land.features)
-      .enter().append('path')
-      .attr('class', 'land')
-      .attr('d', path);
+      svg.append('g')
+        .selectAll('path')
+        .data(land.features)
+        .enter().append('path')
+        .attr('class', 'land')
+        .attr('d', path);
 
-    // Add pins for each destination
-    const pins = svg.append('g');
+      // Add pins for each destination
+      const pins = svg.append('g');
 
-    destinations.forEach((dest, i) => {
-      const [x, y] = projection([dest.lon, dest.lat]);
-      if (x && y) {
+      destinations.forEach((dest, i) => {
+        const coords = projection([dest.lon, dest.lat]);
+        if (!coords) return;
+        const [x, y] = coords;
+
         const g = pins.append('g');
 
         // Pulse ring
@@ -683,18 +690,21 @@ function renderWorldMap() {
           .attr('cx', x).attr('cy', y).attr('r', 2.2)
           .attr('class', 'pin-dot')
           .attr('filter', 'url(#pin-glow)');
-      }
-    });
+      });
 
-    // Fade in the map
-    container.classList.add('visible');
-  });
+      // Fade in the map
+      container.classList.add('visible');
+    })
+    .catch(err => {
+      console.error('Map load failed:', err);
+    });
 }
 
 // ─── INIT ───
 document.getElementById('play-btn').addEventListener('click', () => {
-  renderWorldMap();
   startMontage();
+  // Render map after montage is visible
+  setTimeout(renderWorldMap, 100);
 });
 preloadImages(15);
 </script>
